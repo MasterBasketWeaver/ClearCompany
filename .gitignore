@@ -2,3 +2,4 @@
 *.snapshots*
 *rad.json
 *Translations*
+*.app
