@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        //https://businesscentral.dynamics.com/b0810640-037d-4a5c-aadf-648636e41230/admin
+        {
+            //https://businesscentral.dynamics.com/b0810640-037d-4a5c-aadf-648636e41230/Sandbox_EBEDEV
+            "name": "Sandbox_EBEDEV",
+            "request": "launch",
+            "type": "al",
+            "tenant": "b0810640-037d-4a5c-aadf-648636e41230",
+            "environmentType": "Sandbox",
+            "environmentName": "Sandbox_EBEDEV",
+            "startupObjectId": 22,
+            "startupObjectType": "Page",
+            "startupCompany": "Gulick Trucking Inc",
+            "breakOnError": "All",
+            "launchBrowser": false,
+            "enableLongRunningSqlStatements": true,
+            "enableSqlInformationDebugger": true
+        },
+        // {
+        //     //https://businesscentral.dynamics.com/b0810640-037d-4a5c-aadf-648636e41230/Prod-Sandbox
+        //     "name": "Prod-Sandbox",
+        //     "request": "launch",
+        //     "type": "al",
+        //     "tenant": "b0810640-037d-4a5c-aadf-648636e41230",
+        //     "environmentType": "Sandbox",
+        //     "environmentName": "Prod-Sandbox",
+        //     "startupObjectId": 22,
+        //     "startupObjectType": "Page",
+        //     "startupCompany": "Gulick Trucking Inc",
+        //     "breakOnError": "All",
+        //     "launchBrowser": false,
+        //     "enableLongRunningSqlStatements": true,
+        //     "enableSqlInformationDebugger": true
+        // }
+    ]
+}
