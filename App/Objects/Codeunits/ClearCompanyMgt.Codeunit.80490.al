@@ -28,15 +28,7 @@ codeunit 80490 "BACC Clear Company Mgt."
         tabledata "Prod. Order Comment Line" = RD,
         tabledata "Prod. Order Rtng Comment Line" = RD,
         tabledata "Prod. Order Comp. Cmt Line" = RD,
-        tabledata "Fixed Asset" = RD,
         tabledata "FA Ledger Entry" = RD,
-        tabledata "FA Setup" = RD,
-        tabledata "FA Posting Type Setup" = RD,
-        tabledata "FA Journal Setup" = RD,
-        tabledata "FA Posting Group" = RD,
-        tabledata "FA Class" = RD,
-        tabledata "FA Subclass" = RD,
-        tabledata "FA Location" = RD,
         tabledata "Depreciation Book" = RD,
         tabledata "FA Depreciation Book" = RD,
         tabledata "FA Allocation" = RD,
@@ -102,8 +94,7 @@ codeunit 80490 "BACC Clear Company Mgt."
             exit;
 
         SelectCompany.GetSelectedCompanies(SelectedCompanies);
-        if SelectedCompanies.Count() = 0 then
-            Error('Please select at least one company to continue.');
+        CheckAnyCompanySelected(SelectedCompanies);
 
         DisplayText.AppendLine('The following companies will be cleared:');
         foreach s in SelectedCompanies do
@@ -121,6 +112,12 @@ codeunit 80490 "BACC Clear Company Mgt."
                 if SelectedCompanies.Contains(Company.Name) then
                     ClearCompany(Company.Name);
             until Company.Next() = 0;
+    end;
+
+    internal procedure CheckAnyCompanySelected(SelectedCompanies: List of [Text[30]])
+    begin
+        if SelectedCompanies.Count() = 0 then
+            Error('Please select at least one company to continue.');
     end;
 
     local procedure ClearCompany(CompanyToDelete: Text[30])
@@ -153,15 +150,7 @@ codeunit 80490 "BACC Clear Company Mgt."
         ProdOrderCommentLine: Record "Prod. Order Comment Line";
         ProdOrderRtngCommentLine: Record "Prod. Order Rtng Comment Line";
         ProdOrderCompCmtLine: Record "Prod. Order Comp. Cmt Line";
-        FixedAsset: Record "Fixed Asset";
         FALedgerEntry: Record "FA Ledger Entry";
-        FASetup: Record "FA Setup";
-        FAPostingTypeSetup: Record "FA Posting Type Setup";
-        FAJournalSetup: Record "FA Journal Setup";
-        FAPostingGroup: Record "FA Posting Group";
-        FAClass: Record "FA Class";
-        FASubclass: Record "FA Subclass";
-        FALocation: Record "FA Location";
         DepreciationBook: Record "Depreciation Book";
         FADepreciationBook: Record "FA Depreciation Book";
         FAAllocation: Record "FA Allocation";
@@ -221,6 +210,9 @@ codeunit 80490 "BACC Clear Company Mgt."
         TableCount := 0;
         TargetCompany := CompanyToDelete;
 
+        // Fixed assets are kept, so their comments are too.
+        CommentLine.SetFilter("Table Name", '<>%1', CommentLine."Table Name"::"Fixed Asset");
+
         StartDateTime := CurrentDateTime();
         IncrementTableCount(SalesHeader);
         IncrementTableCount(SalesLine);
@@ -250,15 +242,7 @@ codeunit 80490 "BACC Clear Company Mgt."
         IncrementTableCount(ProdOrderCommentLine);
         IncrementTableCount(ProdOrderRtngCommentLine);
         IncrementTableCount(ProdOrderCompCmtLine);
-        IncrementTableCount(FixedAsset);
         IncrementTableCount(FALedgerEntry);
-        IncrementTableCount(FASetup);
-        IncrementTableCount(FAPostingTypeSetup);
-        IncrementTableCount(FAJournalSetup);
-        IncrementTableCount(FAPostingGroup);
-        IncrementTableCount(FAClass);
-        IncrementTableCount(FASubclass);
-        IncrementTableCount(FALocation);
         IncrementTableCount(DepreciationBook);
         IncrementTableCount(FADepreciationBook);
         IncrementTableCount(FAAllocation);
@@ -337,15 +321,7 @@ codeunit 80490 "BACC Clear Company Mgt."
         DeleteRecordsFromTable(ProdOrderCommentLine, i);
         DeleteRecordsFromTable(ProdOrderRtngCommentLine, i);
         DeleteRecordsFromTable(ProdOrderCompCmtLine, i);
-        DeleteRecordsFromTable(FixedAsset, i);
         DeleteRecordsFromTable(FALedgerEntry, i);
-        DeleteRecordsFromTable(FASetup, i);
-        DeleteRecordsFromTable(FAPostingTypeSetup, i);
-        DeleteRecordsFromTable(FAJournalSetup, i);
-        DeleteRecordsFromTable(FAPostingGroup, i);
-        DeleteRecordsFromTable(FAClass, i);
-        DeleteRecordsFromTable(FASubclass, i);
-        DeleteRecordsFromTable(FALocation, i);
         DeleteRecordsFromTable(DepreciationBook, i);
         DeleteRecordsFromTable(FADepreciationBook, i);
         DeleteRecordsFromTable(FAAllocation, i);
@@ -404,8 +380,7 @@ codeunit 80490 "BACC Clear Company Mgt."
     var
         RecRef: RecordRef;
     begin
-        RecRef.GetTable(Table);
-        RecRef.ChangeCompany(TargetCompany);
+        OpenInTargetCompany(Table, RecRef);
         if RecRef.IsEmpty() then
             exit;
         TableCount += 1;
@@ -415,20 +390,34 @@ codeunit 80490 "BACC Clear Company Mgt."
     var
         RecRef: RecordRef;
     begin
-        RecRef.GetTable(Table);
-        RecRef.ChangeCompany(TargetCompany);
+        OpenInTargetCompany(Table, RecRef);
         if RecRef.IsEmpty() then
             exit;
         i += 1;
         Window.Update(2, StrSubstNo('%1 of %2: %3', i, TableCount, RecRef.Caption()));
-        if not RecRef.Truncate(true) then
-            RecRef.DeleteAll(false);
+        // Truncate is for emptying a whole table; a filtered one keeps the rows outside its filter.
+        if RecRef.GetFilters() <> '' then
+            RecRef.DeleteAll(false)
+        else
+            if not RecRef.Truncate(true) then
+                RecRef.DeleteAll(false);
         RecRef.Close();
         Commit();
+    end;
+
+    // The view is set again after ChangeCompany so a table's filters (Comment Line's) hold in the target company.
+    local procedure OpenInTargetCompany(Table: Variant; var RecRef: RecordRef)
+    var
+        TableView: Text;
+    begin
+        RecRef.GetTable(Table);
+        TableView := RecRef.GetView(false);
+        RecRef.ChangeCompany(TargetCompany);
+        RecRef.SetView(TableView);
     end;
 
     var
         Window: Dialog;
         TargetCompany: Text;
         TableCount: Integer;
-}
+}
